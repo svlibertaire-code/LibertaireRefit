@@ -1,0 +1,114 @@
+[2026-05-01 12:27:08 +0000] [327980] [INFO] Starting gunicorn 25.3.0
+[2026-05-01 12:27:08 +0000] [327980] [INFO] Listening at: https://0.0.0.0:8080 (327980)
+[2026-05-01 12:27:08 +0000] [327980] [INFO] Using worker: gthread
+[2026-05-01 12:27:08 +0000] [327981] [INFO] Booting worker with pid: 327981
+[2026-05-01 12:27:08 +0000] [327982] [INFO] Booting worker with pid: 327982
+[2026-05-01 12:27:08 +0000] [327980] [ERROR] Control server error: [Errno 13] Permission denied: '/home/refit'
+[2026-05-01 12:27:42,536] ERROR in refit_app: Query failed: connection to server at "localhost" (::1), port 5432 failed: could not open certificate file "/home/refit/.postgresql/postgresql.crt": Permission denied
+connection to server at "localhost" (::1), port 5432 failed: FATAL:  password authentication failed for user "refit"
+Traceback (most recent call last):
+  File "/opt/refit/refit_app.py", line 118, in query
+    cur = get_db().execute(sql, args)
+          ^^^^^^^^
+  File "/opt/refit/refit_app.py", line 106, in get_db
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: could not open certificate file "/home/refit/.postgresql/postgresql.crt": Permission denied
+connection to server at "localhost" (::1), port 5432 failed: FATAL:  password authentication failed for user "refit"
+
+[2026-05-01 12:27:42,537] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/refit_app.py", line 165, in decorated
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/refit_app.py", line 448, in dashboard
+    counts = query("""
+             ^^^^^^^^^
+  File "/opt/refit/refit_app.py", line 118, in query
+    cur = get_db().execute(sql, args)
+          ^^^^^^^^
+  File "/opt/refit/refit_app.py", line 106, in get_db
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: could not open certificate file "/home/refit/.postgresql/postgresql.crt": Permission denied
+connection to server at "localhost" (::1), port 5432 failed: FATAL:  password authentication failed for user "refit"
+
+[2026-05-01 12:27:42,576] ERROR in app: Exception on /api/task/1 [POST]
+Traceback (most recent call last):
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/refit_app.py", line 165, in decorated
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/refit_app.py", line 2169, in update_task
+    execute("UPDATE tasks SET status = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s", (status, task_id))
+  File "/opt/refit/refit_app.py", line 127, in execute
+    db = get_db()
+         ^^^^^^^^
+  File "/opt/refit/refit_app.py", line 106, in get_db
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/refit/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: could not open certificate file "/home/refit/.postgresql/postgresql.crt": Permission denied
+connection to server at "localhost" (::1), port 5432 failed: FATAL:  password authentication failed for user "refit"
+
+[2026-05-01 12:30:49 +0000] [327980] [INFO] Handling signal: term
+[2026-05-01 12:30:49 +0000] [327981] [INFO] Worker exiting (pid: 327981)
+[2026-05-01 12:30:49 +0000] [327982] [INFO] Worker exiting (pid: 327982)
+[2026-05-01 12:30:49 +0000] [327980] [INFO] Shutting down: Master
+[2026-05-01 12:30:49 +0000] [328209] [INFO] Starting gunicorn 25.3.0
+[2026-05-01 12:30:49 +0000] [328209] [INFO] Listening at: https://0.0.0.0:8080 (328209)
+[2026-05-01 12:30:49 +0000] [328209] [INFO] Using worker: gthread
+[2026-05-01 12:30:49 +0000] [328211] [INFO] Booting worker with pid: 328211
+[2026-05-01 12:30:49 +0000] [328212] [INFO] Booting worker with pid: 328212
+[2026-05-01 12:30:49 +0000] [328209] [ERROR] Control server error: [Errno 13] Permission denied: '/home/refit'
+[2026-05-01 13:18:46 +0000] [328209] [INFO] Handling signal: term
+[2026-05-01 13:18:46 +0000] [328212] [INFO] Worker exiting (pid: 328212)
+[2026-05-01 13:18:46 +0000] [328211] [INFO] Worker exiting (pid: 328211)
+[2026-05-01 13:18:46 +0000] [328209] [INFO] Shutting down: Master
+[2026-05-01 13:18:46 +0000] [329730] [INFO] Starting gunicorn 25.3.0
+[2026-05-01 13:18:46 +0000] [329730] [INFO] Listening at: https://0.0.0.0:8080 (329730)
+[2026-05-01 13:18:46 +0000] [329730] [INFO] Using worker: gthread
+[2026-05-01 13:18:46 +0000] [329733] [INFO] Booting worker with pid: 329733
+[2026-05-01 13:18:46 +0000] [329734] [INFO] Booting worker with pid: 329734
+[2026-05-01 13:18:47 +0000] [329730] [ERROR] Control server error: [Errno 13] Permission denied: '/home/refit'
+[2026-05-01 14:14:29 +0000] [329730] [INFO] Handling signal: term
+[2026-05-01 14:14:29 +0000] [329734] [INFO] Worker exiting (pid: 329734)
+[2026-05-01 14:14:29 +0000] [329733] [INFO] Worker exiting (pid: 329733)
+[2026-05-01 14:14:29 +0000] [329730] [INFO] Shutting down: Master
+[2026-05-01 14:14:29 +0000] [330223] [INFO] Starting gunicorn 25.3.0
+[2026-05-01 14:14:29 +0000] [330223] [INFO] Listening at: https://0.0.0.0:8080 (330223)
+[2026-05-01 14:14:29 +0000] [330223] [INFO] Using worker: gthread
+[2026-05-01 14:14:29 +0000] [330227] [INFO] Booting worker with pid: 330227
+[2026-05-01 14:14:29 +0000] [330228] [INFO] Booting worker with pid: 330228
+[2026-05-01 14:14:29 +0000] [330223] [ERROR] Control server error: [Errno 13] Permission denied: '/home/refit'
