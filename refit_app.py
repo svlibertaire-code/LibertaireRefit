@@ -14,6 +14,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -61,27 +62,21 @@ limiter = Limiter(
     key_prefix="refit",
 )
 
-# ── Security headers ──
-@app.after_request
-def add_security_headers(response):
-    """Add security headers to all responses."""
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: blob:; "
-        "font-src 'self'; "
-        "connect-src 'self'; "
-        "form-action 'self'; "
-        "frame-ancestors 'none'; "
-        "base-uri 'self';"
-    )
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    return response
+# ── Security headers (Talisman) ──
+# Relaxed CSP since app serves inline CSS/JS; still adds X-Frame-Options, HSTS, etc.
+Talisman(
+    app,
+    force_https=USE_HTTPS,
+    strict_transport_security=True,
+    strict_transport_security_max_age=31536000,
+    content_security_policy={
+        'default-src': "'self'",
+        'script-src': "'self' 'unsafe-inline'",
+        'style-src': "'self' 'unsafe-inline'",
+        'img-src': "'self' data: blob:",
+    },
+    referrer_policy='strict-origin-when-cross-origin',
+)
 
 # ── Cache-Control for sensitive pages ──
 @app.after_request
@@ -699,17 +694,17 @@ def new_task():
     systems = query("SELECT id, name FROM systems ORDER BY name")
     
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
+        name = sanitize_text(request.form.get('name', ''), max_len=200)
         compartment_id = request.form.get('compartment_id', type=int)
         system_id = request.form.get('system_id', type=int)
-        status = request.form.get('status', 'To plan')
-        phase = request.form.get('phase', '')
-        priority = request.form.get('priority', 'Medium')
-        notes = request.form.get('notes', '').strip()
+        status = sanitize_text(request.form.get('status', 'To plan'), max_len=50)
+        phase = sanitize_text(request.form.get('phase', ''), max_len=100)
+        priority = sanitize_text(request.form.get('priority', 'Medium'), max_len=50)
+        notes = sanitize_text(request.form.get('notes', ''), max_len=2000)
         inventory_id = request.form.get('inventory_id', type=int)
         
-        planned_start = request.form.get('planned_start', '').strip() or None
-        planned_end = request.form.get('planned_end', '').strip() or None
+        planned_start = sanitize_text(request.form.get('planned_start', ''), max_len=20) or None
+        planned_end = sanitize_text(request.form.get('planned_end', ''), max_len=20) or None
         
         if name:
             task_id = execute("""
@@ -830,15 +825,15 @@ def task_detail(task_id):
     
     if request.method == 'POST':
         # Update task fields
-        new_name = request.form.get('name', '').strip()
+        new_name = sanitize_text(request.form.get('name', ''), max_len=200)
         new_compartment_id = request.form.get('compartment_id', type=int)
         new_system_id = request.form.get('system_id', type=int)
-        new_status = request.form.get('status', '')
-        new_phase = request.form.get('phase', '')
-        new_priority = request.form.get('priority', '')
-        new_notes = request.form.get('notes', '').strip()
-        new_planned_start = request.form.get('planned_start', '').strip() or None
-        new_planned_end = request.form.get('planned_end', '').strip() or None
+        new_status = sanitize_text(request.form.get('status', ''), max_len=50)
+        new_phase = sanitize_text(request.form.get('phase', ''), max_len=100)
+        new_priority = sanitize_text(request.form.get('priority', ''), max_len=50)
+        new_notes = sanitize_text(request.form.get('notes', ''), max_len=2000)
+        new_planned_start = sanitize_text(request.form.get('planned_start', ''), max_len=20) or None
+        new_planned_end = sanitize_text(request.form.get('planned_end', ''), max_len=20) or None
         new_inventory_id = request.form.get('inventory_id', type=int)
         
         if new_name:
@@ -859,7 +854,7 @@ def task_detail(task_id):
             """, (new_name, new_compartment_id, new_system_id, new_status, new_phase, new_priority, new_notes, new_planned_start, new_planned_end, new_inventory_id, task_id))
         
         # Add log entry if provided
-        entry = request.form.get('log_entry', '').strip()
+        entry = sanitize_text(request.form.get('log_entry', ''), max_len=2000)
         if entry:
             execute("INSERT INTO logs (task_id, entry) VALUES (%s,%s)", (task_id, entry))
         
@@ -1245,7 +1240,7 @@ def update_compartment(comp_id):
             except (ValueError, TypeError):
                 continue
         else:
-            vals.append(str(value))
+            vals.append(sanitize_text(str(value), max_len=500))
             sets.append(field + " = %s")
     if not sets:
         return jsonify(ok=False, error='No valid fields'), 400
@@ -1572,18 +1567,18 @@ def item_detail(item_id):
     systems = query("SELECT id, name FROM systems ORDER BY name")
     
     if request.method == 'POST':
-        new_item = request.form.get('item', '').strip()
+        new_item = sanitize_text(request.form.get('item', ''), max_len=200)
         new_compartment_id = request.form.get('compartment_id', type=int)
         new_system_id = request.form.get('system_id', type=int)
         new_quantity = request.form.get('quantity', type=int) or 1
         new_unit_cost = request.form.get('unit_cost', type=float) or 0
         new_total_cost = request.form.get('total_cost', type=float) or 0
-        new_reference = request.form.get('reference', '').strip()
-        new_url = request.form.get('url', '').strip()
-        new_purchase_status = request.form.get('purchase_status', '')
-        new_delivery_date = request.form.get('delivery_date', '').strip()
-        new_install_date = request.form.get('install_date', '').strip()
-        new_notes = request.form.get('notes', '').strip()
+        new_reference = sanitize_text(request.form.get('reference', ''), max_len=200)
+        new_url = sanitize_text(request.form.get('url', ''), max_len=500)
+        new_purchase_status = sanitize_text(request.form.get('purchase_status', ''), max_len=50)
+        new_delivery_date = sanitize_text(request.form.get('delivery_date', ''), max_len=20)
+        new_install_date = sanitize_text(request.form.get('install_date', ''), max_len=20)
+        new_notes = sanitize_text(request.form.get('notes', ''), max_len=2000)
         
         if new_item:
             execute("""
@@ -2211,7 +2206,7 @@ if(location.hash && location.hash.indexOf('#edit')===0){
 @limiter.limit("30 per minute")
 def update_task(task_id):
     data = request.json or {}
-    status = data.get('status')
+    status = sanitize_text(data.get('status'), max_len=50)
     if status in ('To plan', 'Ready', 'In progress', 'Done'):
         execute("UPDATE tasks SET status = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s", (status, task_id))
         return jsonify(ok=True)
@@ -2273,7 +2268,7 @@ def upload_log_photo(log_id):
 @login_required
 @limiter.limit("30 per minute")
 def update_inventory(inv_id):
-    status = request.json.get('status')
+    status = sanitize_text(request.json.get('status'), max_len=50)
     if status in ('To buy', 'Ordered', 'Bought'):
         execute("UPDATE inventory SET purchase_status = %s WHERE id = %s", (status, inv_id))
         return jsonify(ok=True)
@@ -2339,7 +2334,7 @@ def update_cable(cable_id):
             # Validate type field
             if field == 'type' and value not in valid_types:
                 return jsonify(ok=False, error='Invalid type'), 400
-            vals.append(str(value))
+            vals.append(sanitize_text(str(value), max_len=500))
             sets.append(field + " = %s")
     
     if not sets:
@@ -2420,7 +2415,7 @@ def update_hose(hose_id):
             # Validate type field
             if field == 'type' and value not in valid_types:
                 return jsonify(ok=False, error='Invalid type'), 400
-            vals.append(str(value))
+            vals.append(sanitize_text(str(value), max_len=500))
             sets.append(field + " = %s")
     
     if not sets:
